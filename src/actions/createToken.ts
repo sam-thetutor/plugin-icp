@@ -3,15 +3,13 @@ import {
     generateImage,
     generateText,
     generateObjectDeprecated,
-} from "@elizaos/core";
-import {
-    ActionExample,
-    HandlerCallback,
     IAgentRuntime,
     Memory,
-    ModelClass,
     State,
+    HandlerCallback,
+    ModelClass,
     type Action,
+    ActionExample
 } from "@elizaos/core";
 import { idlFactory } from "../canisters/pick-pump/index.did";
 import { _SERVICE } from "../canisters/pick-pump/index.did.d";
@@ -124,13 +122,19 @@ export const executeCreateToken: Action = {
             messageText.includes(keyword.toLowerCase())
         );
     },
-    handler: async (
+    handler: async ({
+        runtime,
+        message,
+        state,
+        options,
+        callback,
+    }: {
         runtime: IAgentRuntime,
         message: Memory,
-        state: State | undefined,
-        _options: { [key: string]: unknown } | undefined,
-        callback?: HandlerCallback
-    ): Promise<void> => {
+        state: State,
+        options: any,
+        callback: HandlerCallback
+    }) => {
         callback?.({
             text: "🔄 Creating meme token...",
             action: "CREATE_TOKEN",
