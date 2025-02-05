@@ -19,8 +19,12 @@ var WalletProvider = class {
       if (privateKeyBytes.length !== 32) {
         throw new Error("Invalid private key length");
       }
-      return Ed25519KeyIdentity.fromSecretKey(privateKeyBytes);
-    } catch (error) {
+      const arrayBuffer = privateKeyBytes.buffer.slice(
+        privateKeyBytes.byteOffset,
+        privateKeyBytes.byteOffset + privateKeyBytes.length
+      );
+      return Ed25519KeyIdentity.fromSecretKey(arrayBuffer);
+    } catch {
       throw new Error("Failed to create ICP identity");
     }
   };
@@ -48,7 +52,7 @@ var WalletProvider = class {
   };
 };
 var icpWalletProvider = {
-  async get(runtime, message, state) {
+  async get(runtime, _message, _state) {
     try {
       const privateKey = runtime.getSetting(
         "INTERNET_COMPUTER_PRIVATE_KEY"
@@ -70,7 +74,7 @@ var icpWalletProvider = {
         identity: null,
         principal: null,
         isAuthenticated: false,
-        error: error.message
+        error: error instanceof Error ? error.message : "Unknown error"
       };
     }
   }
@@ -228,7 +232,7 @@ var isPrincipalText = (text) => {
   try {
     Principal.fromText(text);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
@@ -387,7 +391,7 @@ var executeCreateToken = {
     "PICKPUMP\u4EE3\u5E01"
   ],
   description: "Create a new meme token on PickPump platform (Internet Computer). This action helps users create and launch tokens specifically on the PickPump platform.",
-  validate: async (runtime, message) => {
+  validate: async (_runtime, message) => {
     const keywords = [
       "pickpump",
       "pp",
@@ -415,13 +419,14 @@ var executeCreateToken = {
       action: "CREATE_TOKEN",
       type: "processing"
     });
-    if (!state) {
-      state = await runtime.composeState(message);
+    let currentState = state;
+    if (!currentState) {
+      currentState = await runtime.composeState(message);
     } else {
-      state = await runtime.updateRecentMessageState(state);
+      currentState = await runtime.updateRecentMessageState(currentState);
     }
     const createTokenContext = composeContext({
-      state,
+      state: currentState,
       template: createTokenTemplate
     });
     const response = await generateObjectDeprecated({
@@ -473,7 +478,7 @@ var executeCreateToken = {
       callback?.(responseMsg);
     } catch (error) {
       const responseMsg = {
-        text: `Failed to create token: ${error.message}`,
+        text: `Failed to create token: ${error instanceof Error ? error.message : "Unknown error"}`,
         action: "CREATE_TOKEN",
         type: "error"
       };
