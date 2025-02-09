@@ -1,5 +1,9 @@
-import { Plugin } from '@elizaos/core';
-
-declare const icpPlugin: Plugin;
+declare const icpPlugin: {
+    name: string;
+    description: string;
+    providers: Provider[];
+    actions: Action[];
+    evaluators: any[];
+};
 
 export { icpPlugin as default, icpPlugin };

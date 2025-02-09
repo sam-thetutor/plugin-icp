@@ -414,7 +414,8 @@ var executeCreateToken = {
     );
   },
   handler: async (runtime, message, state, _options, callback) => {
-    callback?.({
+    var _a;
+    callback == null ? void 0 : callback({
       text: "\u{1F504} Creating meme token...",
       action: "CREATE_TOKEN",
       type: "processing"
@@ -451,7 +452,7 @@ var executeCreateToken = {
       throw new Error("Failed to generate token logo");
     }
     const logoUploadResult = await uploadFileToWeb3Storage(logo);
-    if (!logoUploadResult.urls?.gateway) {
+    if (!((_a = logoUploadResult.urls) == null ? void 0 : _a.gateway)) {
       throw new Error("Failed to upload logo to Web3Storage");
     }
     try {
@@ -475,14 +476,14 @@ var executeCreateToken = {
         action: "CREATE_TOKEN",
         type: "success"
       };
-      callback?.(responseMsg);
+      callback == null ? void 0 : callback(responseMsg);
     } catch (error) {
       const responseMsg = {
         text: `Failed to create token: ${error instanceof Error ? error.message : "Unknown error"}`,
         action: "CREATE_TOKEN",
         type: "error"
       };
-      callback?.(responseMsg);
+      callback == null ? void 0 : callback(responseMsg);
     }
   },
   examples: [
