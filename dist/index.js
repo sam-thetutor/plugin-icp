@@ -6590,14 +6590,16 @@ var executeICPSwap = async (walletResponse, params) => {
       idlFactory5,
       (_a = pool.canisterId) == null ? void 0 : _a.toString()
     );
-    const tokenActor = await walletResponse.createActor(
-      idlFactory,
-      params.fromCanisterId
-    );
+    const [tokenFromActor, tokenToActor] = await Promise.all([
+      walletResponse.createActor(idlFactory, params.fromCanisterId),
+      walletResponse.createActor(idlFactory, params.toCanisterId)
+    ]);
     const zeroForOne = pool.token0.address === params.fromCanisterId;
-    const [tokenDecimals, tokenFee] = await Promise.all([
-      tokenActor.icrc1_decimals(),
-      tokenActor.icrc1_fee()
+    const [tokenFromDecimals, tokenToDecimals, tokenFromFee, tokenToFee] = await Promise.all([
+      tokenFromActor.icrc1_decimals(),
+      tokenToActor.icrc1_decimals(),
+      tokenFromActor.icrc1_fee(),
+      tokenToActor.icrc1_fee()
     ]);
     console.log(
       "Pool canister id:",
@@ -6613,7 +6615,7 @@ var executeICPSwap = async (walletResponse, params) => {
         subaccount: []
         // No subaccount
       },
-      amount: params.amount + BigInt(pool.fee) + params.amount * BigInt(3) / BigInt(100) + BigInt(tokenFee),
+      amount: params.amount + BigInt(pool.fee) + params.amount * BigInt(3) / BigInt(100) + BigInt(tokenFromFee),
       //approve the amount of tokens to the swap canister + fee +  6 %
       expires_at: [],
       // No expiration
@@ -6628,7 +6630,7 @@ var executeICPSwap = async (walletResponse, params) => {
       from_subaccount: []
       // No subaccount
     };
-    const approveResult = await tokenActor.icrc2_approve(
+    const approveResult = await tokenFromActor.icrc2_approve(
       approveArgs
     );
     console.log("Approval result for icpswap:", approveResult);
@@ -6636,10 +6638,11 @@ var executeICPSwap = async (walletResponse, params) => {
       throw new Error(`Approval failed: ${JSON.stringify(approveResult.Err)}`);
     }
     const depositResult = await swapActor.depositFrom({
-      fee: 1e5,
-      amount: params.amount + BigInt(pool.fee) + tokenFee * BigInt(3) / BigInt(100),
+      fee: tokenFromFee,
+      amount: params.amount + BigInt(pool.fee) + tokenFromFee * BigInt(3) / BigInt(100),
       token: params.fromCanisterId
     });
+    console.log("Deposit result:", depositResult);
     if ("err" in depositResult) {
       throw new Error(`Error in depositing tokens: ${depositResult.err}`);
     }
@@ -6658,13 +6661,19 @@ var executeICPSwap = async (walletResponse, params) => {
     const balanceResult = await swapActor.getUserUnusedBalance(
       principalAddress
     );
+    console.log("Balance result:", balanceResult);
     const withdrawAmount = zeroForOne ? balanceResult.ok.balance1 : balanceResult.ok.balance0;
-    const withdrawToken = zeroForOne ? params.toCanisterId : params.fromCanisterId;
+    const withdrawToken = zeroForOne ? pool.token1.address : pool.token0.address;
+    const tokenWithdrawActor = await walletResponse.createActor(idlFactory, withdrawToken);
+    const tokenWithdrawFee = await tokenWithdrawActor.icrc1_fee();
+    const withdrawAmountWithoutFee = Number(withdrawAmount - BigInt(tokenWithdrawFee));
+    console.log("Withdraw amount without fee:", withdrawAmountWithoutFee, withdrawToken, zeroForOne);
     const withdrawResult = await swapActor.withdraw({
-      fee: 1e4,
-      amount: Number(withdrawAmount - BigInt(1e4)),
+      fee: Number(tokenWithdrawFee),
+      amount: withdrawAmountWithoutFee,
       token: withdrawToken
     });
+    console.log("Withdraw result:", withdrawResult);
     if ("err" in withdrawResult) {
       throw new Error(
         `Error withdrawing funds from ICPSwap: ${withdrawResult.err}`

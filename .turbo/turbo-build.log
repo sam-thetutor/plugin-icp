@@ -10,9 +10,9 @@
 [34mCLI[39m Target: node16
 [34mCLI[39m Cleaning output folder
 [34mESM[39m Build start
-[32mESM[39m [1mdist/index.js     [22m[32m222.72 KB[39m
-[32mESM[39m [1mdist/index.js.map [22m[32m507.96 KB[39m
-[32mESM[39m ⚡️ Build success in 66ms
+[32mESM[39m [1mdist/index.js     [22m[32m223.44 KB[39m
+[32mESM[39m [1mdist/index.js.map [22m[32m509.17 KB[39m
+[32mESM[39m ⚡️ Build success in 60ms
 DTS Build start
-DTS ⚡️ Build success in 2087ms
+DTS ⚡️ Build success in 1800ms
 DTS dist/index.d.ts 268.00 B
