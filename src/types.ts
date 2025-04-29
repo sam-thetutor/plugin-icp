@@ -12,6 +12,32 @@ export interface TransferParams {
     memo?: bigint;
 }
 
+
+export interface TransferICRCParams{
+    canisterId: string;
+    to: Principal | string;
+    amount: number;
+    memo?: bigint;
+}
+
+
+export interface TransferState {
+    to: Principal | string;
+    amount: number;
+    canisterId: string;
+}
+
+
+
+
+
+
+export interface TransferParams {
+    to: Principal | string;
+    amount: bigint;
+    memo?: bigint;
+}
+
 export interface ICPBalance {
     e8s: bigint;
 }

@@ -29,6 +29,8 @@ export class WalletProvider {
                 privateKeyBytes.byteOffset,
                 privateKeyBytes.byteOffset + privateKeyBytes.length
             );
+
+            
             return Ed25519KeyIdentity.fromSecretKey(arrayBuffer);
         } catch {
             throw new Error("Failed to create ICP identity");
@@ -88,7 +90,14 @@ export const icpWalletProvider: Provider = {
                 "INTERNET_COMPUTER_PRIVATE_KEY"
             );
             if (!privateKey) {
-                throw new Error("INTERNET_COMPUTER_PRIVATE_KEY not found");
+                throw new Error("INTERNET_COMPUTER_PRIVATE_KEY not found in settings");
+            }
+
+            console.log("icp loaded successfully");
+
+            // // Validate private key format
+            if (!/^[0-9a-fA-F]{64}$/.test(privateKey)) {
+                throw new Error("Invalid private key format - must be 32 bytes hex");
             }
 
             const wallet = new WalletProvider(privateKey);
@@ -101,12 +110,13 @@ export const icpWalletProvider: Provider = {
                 createActor: wallet.createActor,
             };
         } catch (error: unknown) {
+            console.error("ICP Wallet Provider Error:", error);
             return {
                 wallet: null,
                 identity: null,
                 principal: null,
                 isAuthenticated: false,
-                error: error instanceof Error ? error.message : "Unknown error",
+                error: error instanceof Error ? error.message : "Unknown error initializing ICP wallet",
             };
         }
     },
