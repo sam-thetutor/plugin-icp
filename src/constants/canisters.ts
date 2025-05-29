@@ -6,6 +6,8 @@ export const CANISTER_IDS = {
     CKUSDT: "cngnf-vqaaa-aaaar-qag4q-cai",
     CHAT: "2ouva-viaaa-aaaaq-aaamq-cai",
     ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
+    GOVERNANCE: "rrkah-fqaaa-aaaaa-aaaaq-cai",
+    
     ESCROW_ADDRESS: "rtqyh-h2r2t-uvy5j-5sodt-jhkre-nem3l-bk5k6-smmbh-2dzex-gfttk-kqe"
 
 } as const;

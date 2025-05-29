@@ -153,3 +153,134 @@ Example valid inputs:
 "Buy 25 ckBTC"
 
 NO additional text or explanations in the output.`;
+
+
+
+export const stakeNeuronTemplate = `Extract ICP staking details from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. amount: Number of ICP to stake
+2. neuronId: Neuron ID to stake into (optional)
+
+Return in this format:
+{
+    "amount": "[NUMBER]",
+    "neuronId": "[NEURON_ID or null]"
+}
+
+Example valid inputs:
+"create a new neuron with 1 icp"
+"stake 1 ICP in a neuron"
+"stake 0.5 ICP in neuron 12345678"
+"add 1 ICP to neuron 987654321"
+"use 1 icp to stake in a neuron"
+
+Note: If no neuron ID is specified, a new neuron will be created.
+NO additional text or explanations in the output.`;
+
+
+
+export const startDissolveNeuronTemplate = `Extract neuron ID for dissolving from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. neuronId: Neuron ID to dissolve
+
+RULES:
+- Use the latest messages in the state to determine the neuron id
+
+Return in this format as a bigInt:
+{
+    "neuronId": "[NEURON_ID]"
+}
+
+Example valid inputs:
+"dissolve neuron 12345678"
+"start dissolving neuron 987654321"
+"start dissolving neuron 12345678"
+"start dissolving neuron 987654321"
+
+NO additional text or explanations in the output.`;
+
+
+export const stopDissolveNeuronTemplate = `Extract neuron ID for stopping dissolving from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. neuronId: Neuron ID to stop dissolving
+
+RULES:
+- Use the latest messages in the state to determine the neuron id
+
+Return in this format as a bigInt:
+{
+    "neuronId": "[NEURON_ID]"
+}
+
+Example valid inputs:
+"stop dissolving neuron 12345678"
+"stop dissolving neuron 987654321"
+"stop dissolving neuron 12345678"
+"stop dissolving neuron 987654321"
+
+NO additional text or explanations in the output.`;
+
+export const increaseDissolveDelayTemplate = `Extract neuron ID and delay time for increasing dissolve delay from the user's message.
+
+User's message: "{{recentMessages}}"
+
+
+RULES:
+- If the user specifies the time in hours, convert it to days (1 day = 24 hours).
+- If the user specifies the time in days, use it directly.
+- Use the latest messages in the state to determine the neuron id and the delay time
+
+
+
+Required information:
+1. neuronId: Neuron ID to increase dissolve delay
+2. delayDays: Delay time in days
+
+Return in this format:
+{
+    "neuronId": "[NEURON_ID]",
+    "delayDays": "[DELAY_DAYS]"
+}
+
+
+Example valid inputs:
+"increase dissolve delay for neuron 12345678 by 240 hours"
+"extend dissolve delay for neuron 987654321 by 10 days"
+"increase dissolve delay for neuron 12345678 by 48 hours"
+"extend dissolve delay for neuron 987654321 by 5 days"
+
+NO additional text or explanations in the output.`;
+
+export const disburseNeuronTemplate = `Extract disburse details from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. neuronId: Neuron ID to disburse
+2. amount: Number of tokens to disburse
+3. toAccountId: Recipient's account ID
+
+RULES:
+- Use the latest messages in the state to determine the neuron id, amount and toAccountId
+
+Return in this format:
+{
+    "neuronId": "[NEURON_ID]",
+    "amount": "[NUMBER]",
+    "toAccountId": "[ACCOUNT_ID]"
+    }
+
+Example valid inputs:
+"disburse 100 ICP from neuron 12345678 to 783b4a9fa2e08acf2e540ed442e57f497de231bbab974e6f57c4f493cb23d7fe"
+"withdraw 0.4 ICP from neuron 987654321 to 783b4a9fa2e08acf2e540ed442e57f497de231bbab974e6f57c4f493cb23d7fe"
+
+NO additional text or explanations in the output.`;

@@ -1,5 +1,5 @@
 {
-    "name": "@elizaos/plugin-icp",
+    "name": "@elizaos-plugins/plugin-icp",
     "version": "0.1.9",
     "type": "module",
     "main": "dist/index.js",
@@ -22,8 +22,12 @@
         "@dfinity/agent": "2.1.3",
         "@dfinity/candid": "2.1.3",
         "@dfinity/identity": "2.1.3",
+        "@dfinity/ledger-icp": "^2.6.13",
+        "@dfinity/nns": "^8.4.1",
         "@dfinity/principal": "2.1.3",
+        "@dfinity/utils": "^2.13.0",
         "@elizaos/core": "workspace:^",
+        "crypto": "^1.0.1",
         "stripe": "^18.0.0",
         "uuid": "^11.1.0"
     },

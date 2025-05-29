@@ -296,20 +296,17 @@ const executeICPSwap = async (
       ? pool.token1.address
       : pool.token0.address;
       
-
       //ger the token fee for the withdraw token
       const tokenWithdrawActor = await walletResponse.createActor(icrcIdlFactory, withdrawToken);
       const tokenWithdrawFee = await tokenWithdrawActor.icrc1_fee();
     // //if ok, withdraw the swapped tokens from the swap canister
     const withdrawAmountWithoutFee = Number(withdrawAmount - BigInt(tokenWithdrawFee));
-    console.log("Withdraw amount without fee:", withdrawAmountWithoutFee,withdrawToken,zeroForOne);
     const withdrawResult: Result = await swapActor.withdraw({
       fee: Number(tokenWithdrawFee),
       amount: withdrawAmountWithoutFee,
       token: withdrawToken,
     });
 
-    console.log("Withdraw result:", withdrawResult);
 
     if ("err" in withdrawResult) {
       throw new Error(
@@ -327,7 +324,7 @@ const executeICPSwap = async (
   }
 };
 
-export const swapTokenAction: Action = {
+export const swapAction: Action = {
   name: "SWAP_TOKENS",
   description: "Swap between two tokens on KongSwap or ICPSwap",
   similes: ["SWAP", "SWAP_TOKENS", "EXCHANGE", "CONVERT", "TRADE"],

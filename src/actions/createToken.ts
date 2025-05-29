@@ -145,6 +145,7 @@ export const executeCreateToken: Action = {
             currentState = await runtime.updateRecentMessageState(currentState);
         }
 
+        //get the token name from the user's message
         const createTokenContext = composeContext({
             state: currentState,
             template: createTokenTemplate,

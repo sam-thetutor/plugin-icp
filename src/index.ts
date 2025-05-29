@@ -1,18 +1,38 @@
 import { icpWalletProvider } from "./providers/wallet";
-import { executeCreateToken, checkBalancesAction,getTokenPriceAction,transferTokenAction,swapTokenAction,buyTokenAction,checkPaymentAction } from "./actions";
+import {
+    executeCreateToken,
+    checkBalancesAction,
+    getTokenPriceAction,
+    transferTokenAction,
+    swapAction,
+    buyTokenAction,
+    checkPaymentAction,
+    checkNeuronsAction,
+    createNeuronAction,
+    startDissolvingNeuronAction,
+    stopDissolvingNeuronAction,
+    increaseDissolveDelayAction,
+    disburseNeuronAction
+} from "./actions";
 
 export const icpPlugin = {
     name: "icp",
     description: "Internet Computer Protocol Plugin for Eliza",
     providers: [icpWalletProvider],
     actions: [
-        swapTokenAction,
+        swapAction,
         executeCreateToken,
         checkBalancesAction,
         getTokenPriceAction,
+        checkNeuronsAction,
+        createNeuronAction,
         transferTokenAction,
         buyTokenAction,
-        checkPaymentAction
+        checkPaymentAction,
+        startDissolvingNeuronAction,
+        disburseNeuronAction,
+        stopDissolvingNeuronAction,
+        increaseDissolveDelayAction,
     ],
     evaluators: [],
 };

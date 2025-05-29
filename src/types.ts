@@ -26,12 +26,6 @@ export interface TransferState {
     amount: number;
     canisterId: string;
 }
-
-
-
-
-
-
 export interface TransferParams {
     to: Principal | string;
     amount: bigint;

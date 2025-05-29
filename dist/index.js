@@ -90,7 +90,7 @@ var WEB3_STORAGE_API_HOST = "";
 var KONG_SWAP_TOKEN_API_HOST = "https://api.kongswap.io/api/tokens";
 var STRIPE_API_KEY = process.env.STRIPE_API_KEY || "";
 
-// ../../node_modules/.pnpm/zod@3.24.1/node_modules/zod/lib/index.mjs
+// ../../node_modules/.pnpm/zod@3.24.2/node_modules/zod/lib/index.mjs
 var util;
 (function(util2) {
   util2.assertEqual = (val) => val;
@@ -3911,16 +3911,32 @@ ZodReadonly.create = (type, params) => {
     ...processCreateParams(params)
   });
 };
-function custom(check, params = {}, fatal) {
+function cleanParams(params, data) {
+  const p = typeof params === "function" ? params(data) : typeof params === "string" ? { message: params } : params;
+  const p2 = typeof p === "string" ? { message: p } : p;
+  return p2;
+}
+function custom(check, _params = {}, fatal) {
   if (check)
     return ZodAny.create().superRefine((data, ctx) => {
       var _a, _b;
-      if (!check(data)) {
-        const p = typeof params === "function" ? params(data) : typeof params === "string" ? { message: params } : params;
-        const _fatal = (_b = (_a = p.fatal) !== null && _a !== void 0 ? _a : fatal) !== null && _b !== void 0 ? _b : true;
-        const p2 = typeof p === "string" ? { message: p } : p;
-        ctx.addIssue({ code: "custom", ...p2, fatal: _fatal });
+      const r = check(data);
+      if (r instanceof Promise) {
+        return r.then((r2) => {
+          var _a2, _b2;
+          if (!r2) {
+            const params = cleanParams(_params, data);
+            const _fatal = (_b2 = (_a2 = params.fatal) !== null && _a2 !== void 0 ? _a2 : fatal) !== null && _b2 !== void 0 ? _b2 : true;
+            ctx.addIssue({ code: "custom", ...params, fatal: _fatal });
+          }
+        });
       }
+      if (!r) {
+        const params = cleanParams(_params, data);
+        const _fatal = (_b = (_a = params.fatal) !== null && _a !== void 0 ? _a : fatal) !== null && _b !== void 0 ? _b : true;
+        ctx.addIssue({ code: "custom", ...params, fatal: _fatal });
+      }
+      return;
     });
   return ZodAny.create();
 }
@@ -4249,6 +4265,7 @@ var CANISTER_IDS = {
   CKUSDT: "cngnf-vqaaa-aaaar-qag4q-cai",
   CHAT: "2ouva-viaaa-aaaaq-aaamq-cai",
   ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
+  GOVERNANCE: "rrkah-fqaaa-aaaaa-aaaaq-cai",
   ESCROW_ADDRESS: "rtqyh-h2r2t-uvy5j-5sodt-jhkre-nem3l-bk5k6-smmbh-2dzex-gfttk-kqe"
 };
 
@@ -4359,6 +4376,127 @@ Example valid inputs:
 "I want to buy 100 ICP"
 "How can I purchase 50 CHAT tokens"
 "Buy 25 ckBTC"
+
+NO additional text or explanations in the output.`;
+var stakeNeuronTemplate = `Extract ICP staking details from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. amount: Number of ICP to stake
+2. neuronId: Neuron ID to stake into (optional)
+
+Return in this format:
+{
+    "amount": "[NUMBER]",
+    "neuronId": "[NEURON_ID or null]"
+}
+
+Example valid inputs:
+"create a new neuron with 1 icp"
+"stake 1 ICP in a neuron"
+"stake 0.5 ICP in neuron 12345678"
+"add 1 ICP to neuron 987654321"
+"use 1 icp to stake in a neuron"
+
+Note: If no neuron ID is specified, a new neuron will be created.
+NO additional text or explanations in the output.`;
+var startDissolveNeuronTemplate = `Extract neuron ID for dissolving from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. neuronId: Neuron ID to dissolve
+
+RULES:
+- Use the latest messages in the state to determine the neuron id
+
+Return in this format as a bigInt:
+{
+    "neuronId": "[NEURON_ID]"
+}
+
+Example valid inputs:
+"dissolve neuron 12345678"
+"start dissolving neuron 987654321"
+"start dissolving neuron 12345678"
+"start dissolving neuron 987654321"
+
+NO additional text or explanations in the output.`;
+var stopDissolveNeuronTemplate = `Extract neuron ID for stopping dissolving from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. neuronId: Neuron ID to stop dissolving
+
+RULES:
+- Use the latest messages in the state to determine the neuron id
+
+Return in this format as a bigInt:
+{
+    "neuronId": "[NEURON_ID]"
+}
+
+Example valid inputs:
+"stop dissolving neuron 12345678"
+"stop dissolving neuron 987654321"
+"stop dissolving neuron 12345678"
+"stop dissolving neuron 987654321"
+
+NO additional text or explanations in the output.`;
+var increaseDissolveDelayTemplate = `Extract neuron ID and delay time for increasing dissolve delay from the user's message.
+
+User's message: "{{recentMessages}}"
+
+
+RULES:
+- If the user specifies the time in hours, convert it to days (1 day = 24 hours).
+- If the user specifies the time in days, use it directly.
+- Use the latest messages in the state to determine the neuron id and the delay time
+
+
+
+Required information:
+1. neuronId: Neuron ID to increase dissolve delay
+2. delayDays: Delay time in days
+
+Return in this format:
+{
+    "neuronId": "[NEURON_ID]",
+    "delayDays": "[DELAY_DAYS]"
+}
+
+
+Example valid inputs:
+"increase dissolve delay for neuron 12345678 by 240 hours"
+"extend dissolve delay for neuron 987654321 by 10 days"
+"increase dissolve delay for neuron 12345678 by 48 hours"
+"extend dissolve delay for neuron 987654321 by 5 days"
+
+NO additional text or explanations in the output.`;
+var disburseNeuronTemplate = `Extract disburse details from the user's message.
+
+User's message: "{{recentMessages}}"
+
+Required information:
+1. neuronId: Neuron ID to disburse
+2. amount: Number of tokens to disburse
+3. toAccountId: Recipient's account ID
+
+RULES:
+- Use the latest messages in the state to determine the neuron id, amount and toAccountId
+
+Return in this format:
+{
+    "neuronId": "[NEURON_ID]",
+    "amount": "[NUMBER]",
+    "toAccountId": "[ACCOUNT_ID]"
+    }
+
+Example valid inputs:
+"disburse 100 ICP from neuron 12345678 to 783b4a9fa2e08acf2e540ed442e57f497de231bbab974e6f57c4f493cb23d7fe"
+"withdraw 0.4 ICP from neuron 987654321 to 783b4a9fa2e08acf2e540ed442e57f497de231bbab974e6f57c4f493cb23d7fe"
 
 NO additional text or explanations in the output.`;
 
@@ -6667,13 +6805,11 @@ var executeICPSwap = async (walletResponse, params) => {
     const tokenWithdrawActor = await walletResponse.createActor(idlFactory, withdrawToken);
     const tokenWithdrawFee = await tokenWithdrawActor.icrc1_fee();
     const withdrawAmountWithoutFee = Number(withdrawAmount - BigInt(tokenWithdrawFee));
-    console.log("Withdraw amount without fee:", withdrawAmountWithoutFee, withdrawToken, zeroForOne);
     const withdrawResult = await swapActor.withdraw({
       fee: Number(tokenWithdrawFee),
       amount: withdrawAmountWithoutFee,
       token: withdrawToken
     });
-    console.log("Withdraw result:", withdrawResult);
     if ("err" in withdrawResult) {
       throw new Error(
         `Error withdrawing funds from ICPSwap: ${withdrawResult.err}`
@@ -6689,7 +6825,7 @@ var executeICPSwap = async (walletResponse, params) => {
     throw error;
   }
 };
-var swapTokenAction = {
+var swapAction = {
   name: "SWAP_TOKENS",
   description: "Swap between two tokens on KongSwap or ICPSwap",
   similes: ["SWAP", "SWAP_TOKENS", "EXCHANGE", "CONVERT", "TRADE"],
@@ -7367,19 +7503,705 @@ Escrow does not have enough funds to complete the payment`;
   ]
 };
 
+// src/actions/checkNeuronsAction.ts
+import { GovernanceCanister } from "@dfinity/nns";
+import { createAgent } from "@dfinity/utils";
+import { Principal as Principal6 } from "@dfinity/principal";
+var HOST = "https://icp-api.io";
+var checkNeuronsAction = {
+  name: "CHECK_NEURONS",
+  description: "Check all available NNS neurons for the user",
+  similes: ["CHECK_NEURONS", "MY_NEURONS", "LIST_NEURONS", "SHOW_NEURONS"],
+  validate: async (_runtime, message) => {
+    const messageText = (typeof message.content === "string" ? message.content : message.content.text || "").toLowerCase();
+    return /\bneurons?\b/.test(messageText);
+  },
+  handler: async (runtime, message, state, _options, callback) => {
+    try {
+      callback == null ? void 0 : callback({
+        text: "\u{1F50D} Fetching your NNS neurons...",
+        action: "CHECK_NEURONS",
+        type: "processing"
+      });
+      if (!state) {
+        state = await runtime.composeState(message);
+      }
+      const walletResponse = await icpWalletProvider.get(
+        runtime,
+        message,
+        state
+      );
+      if (!walletResponse.wallet || !walletResponse.identity) {
+        throw new Error("Failed to initialize wallet/identity");
+      }
+      const agent = await createAgent({
+        identity: walletResponse.identity,
+        host: HOST
+      });
+      const { listNeurons } = GovernanceCanister.create({
+        agent,
+        canisterId: Principal6.fromText(CANISTER_IDS.GOVERNANCE)
+      });
+      const myNeurons = await listNeurons({ certified: false });
+      if (myNeurons.length === 0) {
+        callback == null ? void 0 : callback({
+          text: "You have no NNS neurons.",
+          action: "CHECK_NEURONS",
+          type: "success"
+        });
+        return;
+      }
+      const neuronList = myNeurons.map((n, i) => {
+        var _a;
+        const id = ((_a = n.neuronId) == null ? void 0 : _a.toString()) || "Unknown";
+        const createdDate = new Date(
+          Number(n.createdTimestampSeconds) * 1e3
+        ).toLocaleDateString();
+        const icpStake = (Number(n.fullNeuron.cachedNeuronStake) / 1e8).toFixed(2);
+        const ageInDays = Math.floor(Number(n.ageSeconds) / (24 * 60 * 60));
+        const votingPower = (Number(n.votingPower) / 1e8).toFixed(2);
+        const dissolveDelay = Math.floor(
+          Number(n.dissolveDelaySeconds) / (24 * 60 * 60)
+        );
+        return `Neuron #${i + 1}:
+              - ID: ${id}
+              - Created: ${createdDate}
+              - Stake: ${icpStake} ICP
+              - Age: ${ageInDays} days
+              - Voting Power: ${votingPower}
+              - Dissolve Delay: ${dissolveDelay} days`;
+      }).join("\n\n");
+      callback == null ? void 0 : callback({
+        text: `\u{1F9E0} Your NNS Neurons:
+
+${neuronList}`,
+        action: "CHECK_NEURONS",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Neuron check error:", error);
+      callback == null ? void 0 : callback({
+        text: `\u274C Failed to fetch neurons: ${error instanceof Error ? error.message : "Unknown error"}`,
+        action: "CHECK_NEURONS",
+        type: "error"
+      });
+    }
+  },
+  examples: [
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Show me my neurons",
+          action: "CHECK_NEURONS"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F50D} Fetching your NNS neurons...",
+          action: "CHECK_NEURONS"
+        }
+      }
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "List all my NNS neurons",
+          action: "CHECK_NEURONS"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F9E0} Your NNS Neurons:\n\nNeuron #1: ...",
+          action: "CHECK_NEURONS"
+        }
+      }
+    ]
+  ]
+};
+
+// src/actions/createNeuronAction.ts
+import {
+  composeContext as composeContext5,
+  generateObjectDeprecated as generateObjectDeprecated5,
+  ModelClass as ModelClass5
+} from "@elizaos/core";
+import { GovernanceCanister as GovernanceCanister2 } from "@dfinity/nns";
+import { createAgent as createAgent2 } from "@dfinity/utils";
+import { Principal as Principal7 } from "@dfinity/principal";
+import { LedgerCanister } from "@dfinity/ledger-icp";
+import { createHash } from "crypto";
+var GOVERNANCE_CANISTER_ID = "rrkah-fqaaa-aaaaa-aaaaq-cai";
+var LEDGER_CANISTER_ID = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+var HOST2 = "https://icp-api.io";
+var DEFAULT_FEE = BigInt(1e4);
+var createNeuronAction = {
+  name: "CREATE_NEURON",
+  description: "Create a new NNS neuron with a specified amount of ICP.",
+  similes: [
+    "CREATE_NEURON",
+    "NEW_NEURON",
+    "STAKE_NEURON",
+    "CREATE NNS NEURON",
+    "CREATE A NEURON",
+    "STAKE ICP FOR NEURON"
+  ],
+  validate: async (_runtime, message) => {
+    const text = typeof message.content === "string" ? message.content : message.content.text || "";
+    return /create.*neuron.*with.*icp/i.test(text) || /stake.*neuron/i.test(text);
+  },
+  handler: async (runtime, message, state, _options, callback) => {
+    try {
+      callback == null ? void 0 : callback({
+        text: "\u{1F9E0} Preparing to create a new neuron...",
+        action: "CREATE_NEURON",
+        type: "processing"
+      });
+      if (!state) {
+        state = await runtime.composeState(message);
+      }
+      const stakeNeuronContext = composeContext5({
+        state,
+        template: stakeNeuronTemplate
+      });
+      const stakeNeuronResponse = await generateObjectDeprecated5({
+        runtime,
+        context: stakeNeuronContext,
+        modelClass: ModelClass5.LARGE
+      });
+      const icpAmount = Number(stakeNeuronResponse.amount);
+      const neuronId = stakeNeuronResponse.neuronId;
+      console.log("stakeNeuronResponse", stakeNeuronResponse);
+      if (!icpAmount) {
+        callback == null ? void 0 : callback({
+          text: "\u274C Please specify the amount of ICP to stake, e.g. 'create a new neuron with 1 icp'.",
+          action: "CREATE_NEURON",
+          type: "error"
+        });
+        return;
+      }
+      const stake = BigInt(Math.floor(icpAmount * 1e8));
+      if (stake < BigInt(1 * 1e8)) {
+        throw new Error("Stake must be at least 1 ICP");
+      }
+      const walletResponse = await icpWalletProvider.get(runtime, message, state);
+      if (!walletResponse.wallet || !walletResponse.identity) {
+        throw new Error("Failed to initialize wallet/identity");
+      }
+      const agent = await createAgent2({
+        identity: walletResponse.identity,
+        host: HOST2
+      });
+      const governance = GovernanceCanister2.create({
+        agent,
+        canisterId: Principal7.fromText(GOVERNANCE_CANISTER_ID)
+      });
+      const ledger = LedgerCanister.create({
+        agent,
+        canisterId: Principal7.fromText(LEDGER_CANISTER_ID)
+      });
+      const principal = walletResponse.identity.getPrincipal();
+      callback == null ? void 0 : callback({
+        text: "\u{1F511} Transfering ICP to governance canister...",
+        action: "CREATE_NEURON",
+        type: "processing"
+      });
+      try {
+        const stakeNeuronResult = await governance.stakeNeuron({
+          stake: stake + BigInt(2e4),
+          principal,
+          ledgerCanister: ledger,
+          createdAt: void 0,
+          fee: DEFAULT_FEE
+        });
+        console.log("stakeNeuronResult", stakeNeuronResult);
+        const successMessage = neuronId ? `\u2705 Successfully staked ${icpAmount} ICP in neuron ${Number(stakeNeuronResult)}!` : `\u2705 New neuron created successfully with ${icpAmount} ICP!`;
+        callback == null ? void 0 : callback({
+          text: successMessage,
+          action: "CREATE_NEURON",
+          type: "success"
+        });
+      } catch (error) {
+        console.error("Stake neuron error:", error);
+        throw error;
+      }
+    } catch (error) {
+      const { message: message2, stack } = error;
+      console.error("Create neuron error:", error, message2, stack);
+      callback == null ? void 0 : callback({
+        text: `\u274C Failed to create neuron: ${error instanceof Error ? error.message : "Unknown error"}`,
+        action: "CREATE_NEURON",
+        type: "error"
+      });
+    }
+  },
+  examples: [
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Create a new neuron with 1 icp",
+          action: "CREATE_NEURON"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F9E0} Preparing to create a new neuron...",
+          action: "CREATE_NEURON"
+        }
+      }
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Stake 2.5 ICP to create a neuron",
+          action: "CREATE_NEURON"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u23F3 Staking ICP to create neuron...",
+          action: "CREATE_NEURON"
+        }
+      }
+    ]
+  ]
+};
+
+// src/actions/startDissolvingNeuronAction.ts
+import {
+  composeContext as composeContext6,
+  generateObjectDeprecated as generateObjectDeprecated6,
+  ModelClass as ModelClass6
+} from "@elizaos/core";
+import { GovernanceCanister as GovernanceCanister3 } from "@dfinity/nns";
+import { createAgent as createAgent3 } from "@dfinity/utils";
+import { Principal as Principal8 } from "@dfinity/principal";
+var HOST3 = "https://icp-api.io";
+var startDissolvingNeuronAction = {
+  name: "START_DISSOLVING_NEURON",
+  description: "Start dissolving a specific NNS neuron by ID.",
+  similes: [
+    "START_DISSOLVING_NEURON",
+    "DISSOLVE_NEURON",
+    "BEGIN_DISSOLVE",
+    "START DISSOLVING"
+  ],
+  validate: async (_runtime, message) => {
+    const text = typeof message.content === "string" ? message.content : message.content.text || "";
+    return typeof message.content === "string";
+  },
+  handler: async (runtime, message, state, _options, callback) => {
+    try {
+      callback == null ? void 0 : callback({
+        text: "\u{1F50D} Preparing to start dissolving the neuron...",
+        action: "START_DISSOLVING_NEURON",
+        type: "processing"
+      });
+      if (!state) {
+        state = await runtime.composeState(message);
+      }
+      const dissolveNeuronContext = composeContext6({
+        state,
+        template: startDissolveNeuronTemplate
+      });
+      const response = await generateObjectDeprecated6({
+        runtime,
+        context: dissolveNeuronContext,
+        modelClass: ModelClass6.LARGE
+      });
+      console.log("response", response);
+      const walletResponse = await icpWalletProvider.get(runtime, message, state);
+      if (!walletResponse.wallet || !walletResponse.identity) {
+        throw new Error("Failed to initialize wallet/identity");
+      }
+      if (!response.neuronId) {
+        callback == null ? void 0 : callback({
+          text: "\u274C Please specify the neuron ID to start dissolving, e.g. 'start dissolving neuron id: 123456'.",
+          action: "START_DISSOLVING_NEURON",
+          type: "error"
+        });
+        return;
+      }
+      const agent = await createAgent3({
+        identity: walletResponse.identity,
+        host: HOST3
+      });
+      const governance = GovernanceCanister3.create({
+        agent,
+        canisterId: Principal8.fromText(CANISTER_IDS.GOVERNANCE)
+      });
+      await governance.startDissolving(BigInt(response.neuronId));
+      console.log("neuron started dissolving", response.neuronId);
+      callback == null ? void 0 : callback({
+        text: `\u2705 Neuron ${response.neuronId} is now dissolving.`,
+        action: "START_DISSOLVING_NEURON",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Start dissolving neuron error:", error);
+      callback == null ? void 0 : callback({
+        text: `\u274C Failed to start dissolving neuron: The neuron id may not be valid. Or the neuron is already dissolving.`,
+        action: "START_DISSOLVING_NEURON",
+        type: "error"
+      });
+    }
+  },
+  examples: [
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Start dissolving neuron id: 123456",
+          action: "START_DISSOLVING_NEURON"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F50D} Preparing to start dissolving the neuron...",
+          action: "START_DISSOLVING_NEURON"
+        }
+      }
+    ]
+  ]
+};
+
+// src/actions/stopDissolvingNeuronAction.ts
+import {
+  composeContext as composeContext7,
+  generateObjectDeprecated as generateObjectDeprecated7,
+  ModelClass as ModelClass7
+} from "@elizaos/core";
+import { GovernanceCanister as GovernanceCanister4 } from "@dfinity/nns";
+import { createAgent as createAgent4 } from "@dfinity/utils";
+import { Principal as Principal9 } from "@dfinity/principal";
+var HOST4 = "https://icp-api.io";
+var stopDissolvingNeuronAction = {
+  name: "STOP_DISSOLVING_NEURON",
+  description: "Stop dissolving a specific NNS neuron by ID.",
+  similes: [
+    "STOP_DISSOLVING_NEURON",
+    "STOP_DISSOLVE",
+    "STOP_DISSOLVING",
+    "STOP DISSOLVING"
+  ],
+  validate: async (_runtime, message) => {
+    return true;
+  },
+  handler: async (runtime, message, state, _options, callback) => {
+    try {
+      callback == null ? void 0 : callback({
+        text: "\u{1F50D} Preparing to stop dissolving the neuron...",
+        action: "STOP_DISSOLVING_NEURON",
+        type: "processing"
+      });
+      if (!state) {
+        state = await runtime.composeState(message);
+      }
+      const dissolveNeuronContext = composeContext7({
+        state,
+        template: stopDissolveNeuronTemplate
+      });
+      const response = await generateObjectDeprecated7({
+        runtime,
+        context: dissolveNeuronContext,
+        modelClass: ModelClass7.LARGE
+      });
+      console.log("response", response);
+      const walletResponse = await icpWalletProvider.get(runtime, message, state);
+      if (!walletResponse.wallet || !walletResponse.identity) {
+        throw new Error("Failed to initialize wallet/identity");
+      }
+      if (!response.neuronId) {
+        callback == null ? void 0 : callback({
+          text: "\u274C Please specify the neuron ID to stop dissolving, e.g. 'stop dissolving neuron id: 123456'.",
+          action: "STOP_DISSOLVING_NEURON",
+          type: "error"
+        });
+        return;
+      }
+      const agent = await createAgent4({
+        identity: walletResponse.identity,
+        host: HOST4
+      });
+      const governance = GovernanceCanister4.create({
+        agent,
+        canisterId: Principal9.fromText(CANISTER_IDS.GOVERNANCE)
+      });
+      await governance.stopDissolving(BigInt(response.neuronId));
+      console.log("neuron stopped dissolving", response.neuronId);
+      callback == null ? void 0 : callback({
+        text: `\u2705 Neuron ${response.neuronId} is now stopped from dissolving.`,
+        action: "STOP_DISSOLVING_NEURON",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Start dissolving neuron error:", error);
+      callback == null ? void 0 : callback({
+        text: `\u274C Failed to stop dissolving neuron: The neuron id may not be valid. Or the neuron is not dissolving.`,
+        action: "STOP_DISSOLVING_NEURON",
+        type: "error"
+      });
+    }
+  },
+  examples: [
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Stop dissolving neuron id: 123456",
+          action: "STOP_DISSOLVING_NEURON"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F50D} Preparing to stop dissolving the neuron...",
+          action: "STOP_DISSOLVING_NEURON"
+        }
+      }
+    ]
+  ]
+};
+
+// src/actions/increaseDissolveDelayAction.ts
+import { GovernanceCanister as GovernanceCanister5 } from "@dfinity/nns";
+import { createAgent as createAgent5 } from "@dfinity/utils";
+import { Principal as Principal10 } from "@dfinity/principal";
+import { composeContext as composeContext8 } from "@elizaos/core";
+import { generateObjectDeprecated as generateObjectDeprecated8 } from "@elizaos/core";
+import { ModelClass as ModelClass8 } from "@elizaos/core";
+var HOST5 = "https://icp-api.io";
+var increaseDissolveDelayAction = {
+  name: "INCREASE_DISSOLVE_DELAY",
+  description: "Increase the dissolve delay of a specific NNS neuron by ID.",
+  similes: [
+    "INCREASE_DISSOLVE_DELAY",
+    "EXTEND_DISSOLVE_DELAY",
+    "INCREASE DELAY",
+    "EXTEND DELAY"
+  ],
+  validate: async (_runtime, message) => {
+    const text = typeof message.content === "string" ? message.content : message.content.text || "";
+    return typeof message.content === "string";
+  },
+  handler: async (runtime, message, state, _options, callback) => {
+    try {
+      callback == null ? void 0 : callback({
+        text: "\u{1F50D} Preparing to increase the dissolve delay of the neuron...",
+        action: "INCREASE_DISSOLVE_DELAY",
+        type: "processing"
+      });
+      if (!state) {
+        state = await runtime.composeState(message);
+      }
+      state = await runtime.composeState(message);
+      const walletResponse = await icpWalletProvider.get(runtime, message, state);
+      if (!walletResponse.wallet || !walletResponse.identity) {
+        throw new Error("Failed to initialize wallet/identity");
+      }
+      let increaseDissolveDelayContext = composeContext8({
+        state,
+        template: increaseDissolveDelayTemplate
+      });
+      const response = await generateObjectDeprecated8({
+        runtime,
+        context: increaseDissolveDelayContext,
+        modelClass: ModelClass8.LARGE
+      });
+      console.log("increase dissolve delay response", response);
+      if (!response.neuronId || !response.delayDays) {
+        callback == null ? void 0 : callback({
+          text: "\u274C Please specify the neuron ID and delay in days, e.g. 'increase dissolve delay for neuron id: 123456 by 30 days'.",
+          action: "INCREASE_DISSOLVE_DELAY",
+          type: "error"
+        });
+        return;
+      }
+      const { neuronId, delayDays } = response;
+      const additionalDissolveDelaySeconds = delayDays * 24 * 60 * 60;
+      const agent = await createAgent5({
+        identity: walletResponse.identity,
+        host: HOST5
+      });
+      const governance = GovernanceCanister5.create({
+        agent,
+        canisterId: Principal10.fromText(CANISTER_IDS.GOVERNANCE)
+      });
+      await governance.increaseDissolveDelay({
+        neuronId: BigInt(neuronId),
+        additionalDissolveDelaySeconds: Number(additionalDissolveDelaySeconds)
+      });
+      callback == null ? void 0 : callback({
+        text: `\u2705 Neuron ${neuronId} dissolve delay increased by ${delayDays} days.`,
+        action: "INCREASE_DISSOLVE_DELAY",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Increase dissolve delay error:", error);
+      callback == null ? void 0 : callback({
+        text: `\u274C Failed to increase dissolve delay: ${error instanceof Error ? error.message : "Unknown error"}`,
+        action: "INCREASE_DISSOLVE_DELAY",
+        type: "error"
+      });
+    }
+  },
+  examples: [
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Increase dissolve delay for neuron id: 123456 by 30 days",
+          action: "INCREASE_DISSOLVE_DELAY"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F50D} Preparing to increase the dissolve delay of the neuron...",
+          action: "INCREASE_DISSOLVE_DELAY"
+        }
+      }
+    ]
+  ]
+};
+
+// src/actions/disburseNeuronAction.ts
+import {
+  composeContext as composeContext9
+} from "@elizaos/core";
+import { GovernanceCanister as GovernanceCanister6 } from "@dfinity/nns";
+import { createAgent as createAgent6 } from "@dfinity/utils";
+import { generateObjectDeprecated as generateObjectDeprecated9, ModelClass as ModelClass9 } from "@elizaos/core";
+import { Principal as Principal11 } from "@dfinity/principal";
+var HOST6 = "https://icp-api.io";
+var disburseNeuronAction = {
+  name: "DISBURSE_NEURON",
+  description: "Disburse a specific NNS neuron by ID.",
+  similes: [
+    "DISBURSE_NEURON",
+    "WITHDRAW_NEURON",
+    "DISBURSE",
+    "WITHDRAW"
+  ],
+  validate: async (_runtime, message) => {
+    const text = typeof message.content === "string" ? message.content : message.content.text || "";
+    console.log("text :", text);
+    const patterns = [
+      /disburse.*neuron.*id/i,
+      /withdraw.*neuron.*id/i,
+      /disburse.*from.*neuron/i,
+      /withdraw.*from.*neuron/i,
+      /disburse.*icp.*(?:from\s+)?neuron/i,
+      /withdraw.*icp.*(?:from\s+)?neuron/i
+    ];
+    return patterns.some((pattern) => pattern.test(text));
+  },
+  handler: async (runtime, message, state, _options, callback) => {
+    try {
+      callback == null ? void 0 : callback({
+        text: "\u{1F50D} Preparing to disburse the neuron...",
+        action: "DISBURSE_NEURON",
+        type: "processing"
+      });
+      let disburseNeuronContext = composeContext9({
+        state,
+        template: disburseNeuronTemplate
+      });
+      let response = await generateObjectDeprecated9({
+        runtime,
+        context: disburseNeuronContext,
+        modelClass: ModelClass9.LARGE
+      });
+      const walletResponse = await icpWalletProvider.get(runtime, message, state);
+      if (!walletResponse.wallet || !walletResponse.identity) {
+        throw new Error("Failed to initialize wallet/identity");
+      }
+      const { neuronId, amount, toAccountId } = response;
+      if (!neuronId || !amount || !toAccountId) {
+        callback == null ? void 0 : callback({
+          text: "\u274C Please specify the neuron ID to disburse, e.g. 'disburse neuron id: 123456'.",
+          action: "DISBURSE_NEURON",
+          type: "error"
+        });
+        return;
+      }
+      console.log("disburse details :", neuronId, amount, toAccountId);
+      const agent = await createAgent6({
+        identity: walletResponse.identity,
+        host: HOST6
+      });
+      const governance = GovernanceCanister6.create({
+        agent,
+        canisterId: Principal11.fromText(CANISTER_IDS.GOVERNANCE)
+      });
+      const formattedAmount = Number(amount) * 10 ** 18;
+      const result = await governance.disburse({
+        neuronId: BigInt(neuronId),
+        toAccountId,
+        amount: BigInt(formattedAmount)
+      });
+      console.log("result :", result);
+      callback == null ? void 0 : callback({
+        text: `\u2705 Neuron ${neuronId} has been disbursed.`,
+        action: "DISBURSE_NEURON",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Disburse neuron error:", error);
+      callback == null ? void 0 : callback({
+        text: `\u274C Failed to disburse neuron. Try again later`,
+        action: "DISBURSE_NEURON",
+        type: "error"
+      });
+    }
+  },
+  examples: [
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Disburse neuron id: 123456 to account id: abcdef-ghi",
+          action: "DISBURSE_NEURON"
+        }
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "\u{1F50D} Preparing to disburse the neuron...",
+          action: "DISBURSE_NEURON"
+        }
+      }
+    ]
+  ]
+};
+
 // src/index.ts
 var icpPlugin = {
   name: "icp",
   description: "Internet Computer Protocol Plugin for Eliza",
   providers: [icpWalletProvider],
   actions: [
-    swapTokenAction,
+    swapAction,
     executeCreateToken,
     checkBalancesAction,
     getTokenPriceAction,
+    checkNeuronsAction,
+    createNeuronAction,
     transferTokenAction,
     buyTokenAction,
-    checkPaymentAction
+    checkPaymentAction,
+    startDissolvingNeuronAction,
+    disburseNeuronAction,
+    stopDissolvingNeuronAction,
+    increaseDissolveDelayAction
   ],
   evaluators: []
 };
