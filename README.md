@@ -9,6 +9,12 @@ Internet Computer Protocol (ICP) plugin for Eliza OS.
 - Handle ICRC-1 token standard
 - Manage ICP wallets and identities
 - Support for anonymous and authenticated calls
+- Transfer ICP and ICRC tokens between accounts
+- Swap between ICRC tokens
+- Create and manage NNS neurons
+- Start and stop dissolving neurons
+- Increase dissolve delay of neurons
+- Disburse neurons to other accounts
 
 ## Installation
 
@@ -46,6 +52,88 @@ Creates a new meme token on PickPump with AI-generated logo and description.
 "Create a space cat token on PickPump";
 "Help me create a pizza-themed funny token on PP";
 ```
+
+
+
+#### Manage Tokens
+
+- **Swap Tokens**: Swap between two ICRC tokens.
+  ```typescript
+  // Example usage in chat
+  "Swap 100 CHAT for EXE on kongswap";
+  "Exchange 50 ICP to ckBTC using icpswap";
+  ```
+
+- **Check Balances**: Check user's token balances.
+  ```typescript
+  // Example usage in chat
+  "What are my token balances?";
+  "Show me my balances";
+  ```
+
+- **Get Token Price**: Get the current price of a token.
+  ```typescript
+  // Example usage in chat
+  "What's the price of ICP?";
+  "Check the price of CHAT";
+  ```
+
+- **Buy Token**: Buy tokens using a credit card through Stripe.
+  ```typescript
+  // Example usage in chat
+  "I want to buy 100 ICP";
+  "How can I purchase CHAT tokens?";
+  ```
+
+- **Transfer Token**: Transfer an ICRC token to a specific principal address.
+  ```typescript
+  // Example usage in chat
+  "Transfer 100 CHAT to principal 4dcwd-5oxhq-z32kh-2prdj-uoh2h-rjfc7-6faoh-rsvbn-jypgt-t6ayq-cae";
+  "Send 50 ICP to address abcdef-ghi";
+  ```
+
+
+
+#### Manage Neurons
+
+- **Create Neuron**: Create a new NNS neuron with a specified amount of ICP.
+  ```typescript
+  // Example usage in chat
+  "Create a new neuron with 1 icp";
+  "Stake 2.5 ICP to create a neuron";
+  ```
+
+- **Check Neurons**: List all available NNS neurons for the user.
+  ```typescript
+  // Example usage in chat
+  "Show me my neurons";
+  "List all my NNS neurons";
+  ```
+
+- **Start Dissolving Neuron**: Begin dissolving a specific neuron by ID.
+  ```typescript
+  // Example usage in chat
+  "Start dissolving neuron id: 123456";
+  ```
+
+- **Stop Dissolving Neuron**: Stop dissolving a specific neuron by ID.
+  ```typescript
+  // Example usage in chat
+  "Stop dissolving neuron id: 123456";
+  ```
+
+- **Increase Dissolve Delay**: Increase the dissolve delay of a neuron by a specified number of days.
+  ```typescript
+  // Example usage in chat
+  "Increase dissolve delay for neuron id: 123456 by 30 days";
+  ```
+
+- **Disburse Neuron**: Disburse a specific neuron to an account.
+  ```typescript
+  // Example usage in chat
+  "Disburse 1 ICP from neuron id: 123456 to account abcdef-ghi";
+  ```
+
 
 ### Providers
 
