@@ -29,12 +29,7 @@ export const stopDissolvingNeuronAction: Action = {
   ],
 
   validate: async (_runtime: IAgentRuntime, message: Memory) => {
-    // const text =
-    //   typeof message.content === "string"
-    //     ? message.content
-    //     : message.content.text || "";
-    // return /stop.*dissolve.*neuron.*id/i.test(text);
-    return true
+    return typeof message.content === "string"
   },
 
   handler: async (

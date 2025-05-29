@@ -145,7 +145,7 @@ export const disburseNeuronAction: Action = {
     } catch (error) {
       console.error("Disburse neuron error:", error);
       callback?.({
-        text: `❌ Failed to disburse neuron. Try again later`,
+        text: `❌ Failed to disburse neuron. The neuron might not exist or there is not enough maturity in the neuron to disburse.`,
         action: "DISBURSE_NEURON",
         type: "error",
       });

@@ -30,9 +30,9 @@ export const icpPlugin = {
         buyTokenAction,
         checkPaymentAction,
         startDissolvingNeuronAction,
-        disburseNeuronAction,
         stopDissolvingNeuronAction,
         increaseDissolveDelayAction,
+        disburseNeuronAction,
     ],
     evaluators: [],
 };

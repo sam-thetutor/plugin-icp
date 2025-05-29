@@ -19,14 +19,7 @@ export const checkNeuronsAction: Action = {
   similes: ["CHECK_NEURONS", "MY_NEURONS", "LIST_NEURONS", "SHOW_NEURONS"],
 
   validate: async (_runtime: IAgentRuntime, message: Memory) => {
-    const messageText = (
-      typeof message.content === "string"
-        ? message.content
-        : message.content.text || ""
-    ).toLowerCase();
-
-    // Trigger on "neuron" or "neurons" or "my neurons" etc.
-    return /\bneurons?\b/.test(messageText);
+    return typeof message.content === "string"
   },
 
   handler: async (
@@ -80,6 +73,7 @@ export const checkNeuronsAction: Action = {
         });
         return;
       }
+      // console.log("myNeurons :", myNeurons);
 
       // Format neuron info
       const neuronList = myNeurons
@@ -96,14 +90,16 @@ export const checkNeuronsAction: Action = {
           const dissolveDelay = Math.floor(
             Number(n.dissolveDelaySeconds) / (24 * 60 * 60)
           );
-
+          const maturityRewards = (Number(n.fullNeuron.maturityE8sEquivalent) / 100000000).toFixed(5);
           return `Neuron #${i + 1}:
               - ID: ${id}
               - Created: ${createdDate}
               - Stake: ${icpStake} ICP
               - Age: ${ageInDays} days
               - Voting Power: ${votingPower}
-              - Dissolve Delay: ${dissolveDelay} days`;
+              - Dissolve Delay: ${dissolveDelay} days
+              - Maturity Rewards: ${maturityRewards} ICP
+              `;
         })
         .join("\n\n");
 

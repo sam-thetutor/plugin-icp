@@ -34,10 +34,6 @@ export const increaseDissolveDelayAction: Action = {
   ],
 
   validate: async (_runtime: IAgentRuntime, message: Memory) => {
-    const text =
-      typeof message.content === "string"
-        ? message.content
-        : message.content.text || "";
     return typeof message.content === "string"
   },
 

@@ -7513,8 +7513,7 @@ var checkNeuronsAction = {
   description: "Check all available NNS neurons for the user",
   similes: ["CHECK_NEURONS", "MY_NEURONS", "LIST_NEURONS", "SHOW_NEURONS"],
   validate: async (_runtime, message) => {
-    const messageText = (typeof message.content === "string" ? message.content : message.content.text || "").toLowerCase();
-    return /\bneurons?\b/.test(messageText);
+    return typeof message.content === "string";
   },
   handler: async (runtime, message, state, _options, callback) => {
     try {
@@ -7563,13 +7562,16 @@ var checkNeuronsAction = {
         const dissolveDelay = Math.floor(
           Number(n.dissolveDelaySeconds) / (24 * 60 * 60)
         );
+        const maturityRewards = (Number(n.fullNeuron.maturityE8sEquivalent) / 1e8).toFixed(5);
         return `Neuron #${i + 1}:
               - ID: ${id}
               - Created: ${createdDate}
               - Stake: ${icpStake} ICP
               - Age: ${ageInDays} days
               - Voting Power: ${votingPower}
-              - Dissolve Delay: ${dissolveDelay} days`;
+              - Dissolve Delay: ${dissolveDelay} days
+              - Maturity Rewards: ${maturityRewards} ICP
+              `;
       }).join("\n\n");
       callback == null ? void 0 : callback({
         text: `\u{1F9E0} Your NNS Neurons:
@@ -7893,7 +7895,7 @@ var stopDissolvingNeuronAction = {
     "STOP DISSOLVING"
   ],
   validate: async (_runtime, message) => {
-    return true;
+    return typeof message.content === "string";
   },
   handler: async (runtime, message, state, _options, callback) => {
     try {
@@ -7989,7 +7991,6 @@ var increaseDissolveDelayAction = {
     "EXTEND DELAY"
   ],
   validate: async (_runtime, message) => {
-    const text = typeof message.content === "string" ? message.content : message.content.text || "";
     return typeof message.content === "string";
   },
   handler: async (runtime, message, state, _options, callback) => {
@@ -8157,7 +8158,7 @@ var disburseNeuronAction = {
     } catch (error) {
       console.error("Disburse neuron error:", error);
       callback == null ? void 0 : callback({
-        text: `\u274C Failed to disburse neuron. Try again later`,
+        text: `\u274C Failed to disburse neuron. The neuron might not exist or there is not enough maturity in the neuron to disburse.`,
         action: "DISBURSE_NEURON",
         type: "error"
       });
@@ -8199,9 +8200,9 @@ var icpPlugin = {
     buyTokenAction,
     checkPaymentAction,
     startDissolvingNeuronAction,
-    disburseNeuronAction,
     stopDissolvingNeuronAction,
-    increaseDissolveDelayAction
+    increaseDissolveDelayAction,
+    disburseNeuronAction
   ],
   evaluators: []
 };
